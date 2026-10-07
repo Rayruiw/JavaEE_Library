@@ -1,0 +1,173 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="jakarta.faces.passthrough">
+
+<h:head>
+    <title>Borrower Registration</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+    <!-- Bootstrap Icons，用于锁图标 -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <style>
+        body {
+            background-color: #f5f5f5;
+            padding-top: 40px;
+        }
+        .card-shell {
+            max-width: 540px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.25rem 0.6rem rgba(0,0,0,0.06);
+            border: 1px solid #e5e5e5;
+            padding: 2rem;
+        }
+        .page-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</h:head>
+
+<h:body>
+    <h:form id="registerForm" p:autocomplete="off">
+        <div class="container">
+
+            <div class="card-shell">
+                <div class="page-title">
+                    <h2 class="mb-1">Borrower Registration</h2>
+                    <small class="text-muted d-block mb-2">
+                        Please complete all fields to create your account.
+                    </small>
+
+                    <!-- ✅ Secure registration 提示 -->
+                    <span class="badge bg-success">
+                        <i class="bi bi-shield-lock-fill me-1"></i>
+                        Secure registration your password is stored encrypted.
+                    </span>
+                </div>
+
+                <!-- 消息（含错误 + 成功） -->
+                <h:panelGroup rendered="#{not empty facesContext.messageList}">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        <h:messages globalOnly="false" layout="list" />
+                    </div>
+                </h:panelGroup>
+
+                <!-- First Name -->
+                <div class="mb-3">
+                    <label class="form-label">First Name</label>
+                    <h:inputText value="#{borrowerRegisterBean.firstName}"
+                                 styleClass="form-control"
+                                 required="true"
+                                 requiredMessage="First name is required." />
+                </div>
+
+                <!-- Last Name -->
+                <div class="mb-3">
+                    <label class="form-label">Last Name</label>
+                    <h:inputText value="#{borrowerRegisterBean.lastName}"
+                                 styleClass="form-control"
+                                 required="true"
+                                 requiredMessage="Last name is required." />
+                </div>
+
+                <!-- Date of Birth -->
+                <div class="mb-3">
+                    <label class="form-label">Date of Birth</label>
+                    <h:inputText id="dob"
+                                 value="#{borrowerRegisterBean.dateOfBirth}"
+                                 styleClass="form-control"
+                                 required="true"
+                                 requiredMessage="Date of birth is required."
+                                 p:type="date" />
+                    <h:message for="dob" styleClass="text-danger small" />
+                </div>
+
+                <!-- Gender -->
+                <div class="mb-3">
+                    <label class="form-label">Gender</label>
+                    <h:selectOneMenu id="gender"
+                                     value="#{borrowerRegisterBean.gender}"
+                                     styleClass="form-select"
+                                     required="true"
+                                     requiredMessage="Please select your gender.">
+
+                        <f:selectItem itemValue="" itemLabel="-- Select Gender --" noSelectionOption="true" />
+                        <f:selectItem itemValue="Male" itemLabel="Male" />
+                        <f:selectItem itemValue="Female" itemLabel="Female" />
+                        <f:selectItem itemValue="Other" itemLabel="Other" />
+                    </h:selectOneMenu>
+
+                    <h:message for="gender" styleClass="text-danger small" />
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <h:inputText id="email"
+                                 value="#{borrowerRegisterBean.email}"
+                                 styleClass="form-control"
+                                 required="true"
+                                 requiredMessage="Email is required."
+                                 p:placeholder="you@example.com"
+                                 p:autocomplete="email">
+                        <f:validateRegex pattern=".+@.+\..+" />
+                    </h:inputText>
+
+                    <h:message for="email" styleClass="text-danger small" />
+                </div>
+
+                <!-- Password -->
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <h:inputSecret id="pwd"
+                                   value="#{borrowerRegisterBean.password}"
+                                   styleClass="form-control"
+                                   required="true"
+                                   requiredMessage="Password is required."
+                                   redisplay="true">
+                        <!-- 长度校验：这里只写最小长度 -->
+                        <f:validateLength minimum="6" />
+                    </h:inputSecret>
+                    <h:message for="pwd" styleClass="text-danger small" />
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="mb-3">
+                    <label class="form-label">Confirm Password</label>
+                    <h:inputSecret id="confirmPwd"
+                                   value="#{borrowerRegisterBean.confirmPassword}"
+                                   styleClass="form-control"
+                                   required="true"
+                                   requiredMessage="Please confirm your password."
+                                   redisplay="true"
+                                   p:autocomplete="new-password" />
+                    <h:message for="confirmPwd" styleClass="text-danger small" />
+                </div>
+
+                <!-- 底部按钮 -->
+                <div class="d-flex justify-content-between">
+                    <h:link outcome="borrower-login"
+                            value="Back to Login"
+                            styleClass="btn btn-outline-secondary" />
+
+                    <h:commandButton value="Register"
+                                     styleClass="btn btn-primary"
+                                     action="#{borrowerRegisterBean.register}" />
+                </div>
+            </div>
+
+        </div>
+    </h:form>
+</h:body>
+</html>

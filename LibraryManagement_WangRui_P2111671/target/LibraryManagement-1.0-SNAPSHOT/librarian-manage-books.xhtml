@@ -1,0 +1,334 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="jakarta.faces.passthrough">
+
+<h:head>
+    <title>Manage Books</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <!-- Bootstrap Icons，用于眼睛图标 -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+    <style>
+        body {
+            background-color: #f5f5f5;
+            padding-top: 32px;
+            padding-bottom: 32px;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .card-shell {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.25rem 0.6rem rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e5e5;
+        }
+
+        .card-shell .card-header {
+            border-bottom: 1px solid #ececec;
+            background-color: #fafafa;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f5f7fb;
+        }
+
+        .form-section label.form-label {
+            font-weight: 500;
+        }
+    </style>
+</h:head>
+
+
+<f:metadata>
+        <f:event type="preRenderView"
+                 listener="#{librarianBookBean.ensureLoggedIn}"/>
+</f:metadata>
+
+<h:body>
+    <!-- 整页一个 form，支持文件上传 -->
+    <h:form id="bookForm" enctype="multipart/form-data">
+        <div class="container">
+
+            <!-- 顶部导航 -->
+            <div class="d-flex justify-content-between align-items-center page-header">
+                <div>
+                    <h1 class="h2 mb-1">Manage Books</h1>
+                    <small class="text-muted">
+                        View, create and edit book information.
+                    </small>
+                </div>
+
+                <div>
+                    <h:link outcome="librarian-dashboard"
+                            value="Back to Dashboard"
+                            styleClass="btn btn-outline-secondary btn-sm" />
+                </div>
+            </div>
+
+            <!-- 全局消息：含校验错误 -->
+            <h:panelGroup rendered="#{not empty facesContext.messageList}">
+                <div class="alert alert-info mb-3">
+                    <h:messages globalOnly="false" layout="list" />
+                </div>
+            </h:panelGroup>
+
+            <!-- 主体两列：左列表 / 右表单 -->
+            <div class="row gy-4">
+                <!-- 左：Book List -->
+                <div class="col-12 col-lg-7">
+                    <div class="card-shell">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Book List</h5>
+
+                            <!-- 新建按钮：展开右侧表单 -->
+                            <h:commandButton value="New Book"
+                                             styleClass="btn btn-primary btn-sm"
+                                             action="#{librarianBookBean.startNew}" 
+                                             immediate="true"/>
+                        </div>
+                        
+                            <!-- 搜索栏：按 title / author / ISBN -->
+                        <div class="card-body border-bottom">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-12 col-md-8">
+                                    <h:inputText value="#{librarianBookBean.searchKeyword}"
+                                                 styleClass="form-control form-control-sm"
+                                                 p:placeholder="Search by title, author or ISBN" />
+                                </div>
+                                <div class="col-12 col-md-4 d-flex gap-2">
+                                    <h:commandButton value="Search"
+                                                     styleClass="btn btn-primary btn-sm flex-fill"
+                                                     action="#{librarianBookBean.search}" />
+                                    <h:commandButton value="Reset"
+                                                     styleClass="btn btn-outline-secondary btn-sm flex-fill"
+                                                     action="#{librarianBookBean.clearSearch}"
+                                                     immediate="true" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body table-wrapper p-0">
+                            <h:dataTable value="#{librarianBookBean.books}"
+                                         var="b"
+                                         styleClass="table table-striped table-hover mb-0 align-middle"
+                                         headerClass="table-light">
+
+                                <!-- Title -->
+                                <h:column>
+                                    <f:facet name="header">Title</f:facet>
+
+                                    <!-- 点击标题跳到图书详细页（假设 outcome 为 borrower-book-detail） -->
+                                    <h:link outcome="borrower-book-detail"
+                                            styleClass="#{b.active ? '' : 'text-muted text-decoration-line-through'}"
+                                            value="#{b.title}">
+                                        <f:param name="bookId" value="#{b.id}" />
+                                    </h:link>
+                                </h:column>
+
+                                <!-- Author -->
+                                <h:column>
+                                    <f:facet name="header">Author</f:facet>
+                                    <h:outputText value="#{b.author}" />
+                                </h:column>
+
+                                <!-- ISBN -->
+                                <h:column>
+                                    <f:facet name="header">ISBN</f:facet>
+                                    <h:outputText value="#{b.isbn}" />
+                                </h:column>
+
+                                <!-- Category -->
+                                <h:column>
+                                    <f:facet name="header">Category</f:facet>
+                                    <h:outputText value="#{b.category != null ? b.category.code : '-'}" />
+                                </h:column>
+                     
+                                <!-- Status：眼睛 / 眼睛斜线 -->
+                                <h:column>
+                                    <f:facet name="header">Status</f:facet>
+
+                                    <!-- Active：眼睛 -->
+                                    <h:commandLink action="#{librarianBookBean.toggleActive(b)}"
+                                                    styleClass="btn btn-link p-0"
+                                                    immediate="true"
+                                                    title="Toggle visibility">
+
+                                         <!-- Active = true：显示眼睛 -->
+                                         <h:panelGroup rendered="#{b.active}">
+                                             <i class="bi bi-eye" style="font-size:1.3rem;"></i>
+                                         </h:panelGroup>
+
+                                         <!-- Active = false：显示眼睛斜线 -->
+                                         <h:panelGroup rendered="#{not b.active}">
+                                             <i class="bi bi-eye-slash" style="font-size:1.3rem;"></i>
+                                         </h:panelGroup>
+
+                                    </h:commandLink>
+                                    
+                                </h:column>
+
+                                <!-- Edit 列 -->
+                                <h:column>
+                                    <f:facet name="header">Edit</f:facet>
+                                    <h:commandButton value="Edit"
+                                                     styleClass="btn btn-sm btn-outline-primary"
+                                                     action="#{librarianBookBean.startEdit(b)}"
+                                                     immediate="true"/>
+                                </h:column>
+
+        
+                                
+                            </h:dataTable>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右：表单 -->
+                <div class="col-12 col-lg-5">
+                    <!-- showForm = true 时显示表单 -->
+                    <h:panelGroup rendered="#{librarianBookBean.showForm}">
+                        <div class="card-shell form-section">
+                            <div class="card-header border-0 px-0 pt-0 mb-3">
+                                <h5 class="mb-0">
+                                    <h:outputText
+                                            value="#{librarianBookBean.editingBook.id == null
+                                                     ? 'Create New Book'
+                                                     : 'Edit Book'}" />
+                                </h5>
+                            </div>
+
+                            <div class="card-body px-0 pt-0">
+
+                                <div class="mb-3">
+                                    <label class="form-label">Title</label>
+                                    <h:inputText value="#{librarianBookBean.editingBook.title}"
+                                                 styleClass="form-control"
+                                                 required="true"
+                                                 requiredMessage="Title is required." />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Author</label>
+                                    <h:inputText value="#{librarianBookBean.editingBook.author}"
+                                                 styleClass="form-control" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">ISBN</label>
+                                    <h:inputText id="isbn"
+                                                 value="#{librarianBookBean.editingBook.isbn}"
+                                                 styleClass="form-control"
+                                                 required="true"
+                                                 maxlength="13"
+                                                 requiredMessage="ISBN is required."
+                                                 validatorMessage="ISBN must be 10–13 digits!"
+                                                 p:placeholder="10–13 digits only">
+                                        <f:validateRegex pattern="[0-9]{10,13}" />
+                                    </h:inputText>
+                                    <h:message for="isbn" styleClass="text-danger small" />
+                                    <small class="form-text text-muted">
+                                        ISBN usually has 10 or 13 digits.
+                                    </small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Publisher</label>
+                                    <h:inputText value="#{librarianBookBean.editingBook.publisher}"
+                                                 styleClass="form-control" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Publish Year</label>
+                                    <h:inputText value="#{librarianBookBean.editingBook.publishYear}"
+                                                 styleClass="form-control"
+                                                 p:type="number" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Category (LCC)</label>
+                                    <h:selectOneMenu value="#{librarianBookBean.selectedCategoryId}"
+                                                     styleClass="form-select">
+                                        <f:selectItem itemValue="#{null}"
+                                                      itemLabel="-- Select Category --"
+                                                      noSelectionOption="true" />
+                                        <f:selectItems value="#{librarianBookBean.categories}"
+                                                       var="c"
+                                                       itemValue="#{c.id}"
+                                                       itemLabel="#{c.code} - #{c.name}" />
+                                    </h:selectOneMenu>
+                                </div>
+                                
+                                <!-- Description -->
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <h:inputTextarea value="#{librarianBookBean.editingBook.description}"
+                                                     styleClass="form-control"
+                                                     rows="4"
+                                                     p:maxlength="2000" />
+                                    <small class="text-muted">Optional. Max 2000 characters.</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Cover Image</label>
+                                    <h:inputFile value="#{librarianBookBean.uploadedFile}"
+                                                 styleClass="form-control" />
+                                    <small class="form-text text-muted">
+                                        Leave empty to keep the current cover or use the default one.
+                                    </small>
+
+                                    <!-- 有封面时显示预览 -->
+                                    <h:panelGroup
+                                            rendered="#{not empty librarianBookBean.editingBook.coverImageUrl}">
+                                        <div class="mt-2">
+                                            <img src="#{facesContext.externalContext.requestContextPath}#{librarianBookBean.editingBook.coverImageUrl}"
+                                                 alt="Cover preview"
+                                                 style="max-height:150px;border:1px solid #ddd;padding:4px;" />
+                                        </div>
+                                    </h:panelGroup>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <h:commandButton value="Save"
+                                                     styleClass="btn btn-primary me-2"
+                                                     action="#{librarianBookBean.saveBook}" />
+                                    <h:commandButton value="Cancel"
+                                                     styleClass="btn btn-outline-secondary"
+                                                     action="#{librarianBookBean.resetForm}" />
+                                </div>
+                            </div>
+                        </div>
+                    </h:panelGroup>
+
+                    <!-- 没选中任何书时的提示 -->
+                    <h:panelGroup rendered="#{not librarianBookBean.showForm}">
+                        <div class="card-shell p-4 text-center text-muted">
+                            Click <strong>New Book</strong> or <strong>Edit</strong> to manage book details.
+                        </div>
+                    </h:panelGroup>
+                </div>
+            </div>
+
+        </div>
+    </h:form>
+</h:body>
+</html>

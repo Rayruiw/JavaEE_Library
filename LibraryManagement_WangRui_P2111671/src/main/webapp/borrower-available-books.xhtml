@@ -1,0 +1,180 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="jakarta.faces.passthrough">
+
+<h:head>
+    <title>Available Books</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous"/>
+    
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+   
+
+    <style>
+        body {
+            padding-top: 40px;
+        }
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+        .messages ul {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+    </style>
+</h:head>
+
+<h:body>
+    <div class="container">
+
+        <h:form>
+
+            <!-- 顶部：欢迎 + 导航按钮 -->
+            <div class="d-flex justify-content-between align-items-center page-header">
+                <div>
+                    <!-- ✅ 已登录的情况 -->
+                    <h:panelGroup rendered="#{borrowerHomeBean.currentBorrower != null}">
+                        <h2 class="mb-0">
+                            Hello,
+                            <h:outputText value="#{borrowerHomeBean.currentBorrower.lastName}" />
+                            !
+                        </h2>
+                        <small class="text-muted">
+                            Browse available books and manage your loans.
+                        </small>
+                    </h:panelGroup>
+
+                    <!-- ✅ 未登录的情况 -->
+                    <h:panelGroup rendered="#{borrowerHomeBean.currentBorrower == null}">
+                        <h2 class="mb-0">Welcome to the Library</h2>
+                        <small class="text-muted">
+                            Browse our catalog. 
+                            <h:link outcome="borrower-login"
+                                    value="Login to borrow books"
+                                    styleClass="link-primary" />
+                        </small>
+                    </h:panelGroup>
+                </div>
+
+                <div class="btn-group">
+                    <!-- ✅ 登录后才显示：Profile + 我的借阅 + 退出 -->
+                    <h:panelGroup rendered="#{borrowerHomeBean.currentBorrower != null}">
+                        <!-- Profile 按钮：带 person-circle 图标 -->
+                        <h:link outcome="borrower-profile"
+                                styleClass="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-person-circle"></i>
+                            <span class="ms-1">Profile</span>
+                        </h:link>
+
+                        <h:link outcome="borrower-borrowed-books"
+                                value="My Borrowed Books"
+                                styleClass="btn btn-outline-secondary btn-sm" />
+
+                        <h:commandButton value="Logout"
+                                         styleClass="btn btn-outline-danger btn-sm"
+                                         action="#{borrowerHomeBean.logout}" />
+                    </h:panelGroup>
+
+                    <!-- ✅ 未登录时显示：去登录 -->
+                    <h:panelGroup rendered="#{borrowerHomeBean.currentBorrower == null}">
+                        <h:link outcome="borrower-login"
+                                value="Borrower Login"
+                                styleClass="btn btn-outline-primary btn-sm" />
+                    </h:panelGroup>
+                </div>
+            </div>
+
+            <!-- 全局消息 -->
+            <h:messages globalOnly="true"
+                        layout="list"
+                        styleClass="alert alert-info messages"
+                        rendered="#{not empty facesContext.messageList}" />
+
+            <!-- 搜索 + 分类过滤 -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-3 align-items-center">
+
+                        <!-- 搜索关键字 -->
+                        <div class="col-md-5">
+                            <label for="kw" class="form-label">Keyword (title or author)</label>
+                            <h:inputText id="kw"
+                                         styleClass="form-control"
+                                         value="#{borrowerHomeBean.keyword}"
+                                         p:placeholder="Enter title or author"/>
+                        </div>
+
+                        <!-- 分类下拉（Library of Congress） -->
+                        <div class="col-md-4">
+                            <label for="cat" class="form-label">Category (LCC)</label>
+                            <h:selectOneMenu id="cat"
+                                             styleClass="form-select"
+                                             value="#{borrowerHomeBean.selectedCategoryId}">
+                                <f:selectItem itemValue="#{null}"
+                                              itemLabel="All Categories"
+                                              noSelectionOption="true" />
+                                <f:selectItems value="#{borrowerHomeBean.allCategories}"
+                                               var="c"
+                                               itemValue="#{c.id}"
+                                               itemLabel="#{c.code} - #{c.name}" />
+                            </h:selectOneMenu>
+                        </div>
+
+                        <!-- 搜索按钮 -->
+                        <div class="col-md-3 d-flex align-items-end">
+                            <h:commandButton value="Search"
+                                             styleClass="btn btn-primary w-100"
+                                             action="#{borrowerHomeBean.searchAvailableBooks}" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 可借书列表 -->
+            <h3>Available Books</h3>
+            <h:dataTable value="#{borrowerHomeBean.availableBooks}"
+                         var="b"
+                         styleClass="table table-striped table-bordered align-middle"
+                         headerClass="table-light fw-semibold">
+
+                <h:column>
+                    <f:facet name="header">Title</f:facet>
+                    <h:link outcome="borrower-book-detail"
+                            value="#{b.title}">
+                        <f:param name="bookId" value="#{b.id}" />
+                    </h:link>
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Author</f:facet>
+                    <h:outputText value="#{b.author}" />
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Category</f:facet>
+                    <h:outputText value="#{b.category != null ? b.category.code : '-'}" />
+                </h:column>
+
+                <h:column>
+                    <f:facet name="header">Action</f:facet>
+                    <h:link outcome="borrower-book-detail"
+                            styleClass="btn btn-primary btn-sm"
+                            value="View">
+                        <f:param name="bookId" value="#{b.id}" />
+                    </h:link>
+                </h:column>
+            </h:dataTable>
+
+        </h:form>
+    </div>
+</h:body>
+</html>
